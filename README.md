@@ -7,6 +7,7 @@ In this repoository, we have provided python computer codes for the numerical so
 This code entails several examples of quarter-five spot problems in two and three dimensions. We also illustrated how to handle heterogeneities in the permeability field. More details are discussed in the paper.
 
 ## Project tree
+```
 2D_Heterogeneous
 └── vertex_heterogen.py
 2D_Homogeneous
@@ -32,6 +33,7 @@ SPE
     │   ├── .DS_Store
     │   └── layers.mat
     └── spe10.py
+    ```
 
 
 
