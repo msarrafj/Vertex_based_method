@@ -72,10 +72,9 @@ R = 0.05
 P_d = 5000.
 theta = 3.
 def s_star(s):
-    # return (s-s_rw)/(1-s_rw-s_ro)  #the numirator s_rw=0.15 gave numerical error 
     return s
+
 def Ds_star_ds(s):
-    # return 1./(1-s_rw-s_ro)
     return 1.
 
 def Pc(s,s0):
@@ -94,23 +93,11 @@ def Pc_none(s,s0):
 
 
 def eta_w(s):
-    # return  s**(11./3.) * 1e-4
     return  s_star(s)**(11./3.) * 1e-4
 
 def eta_o(s):
-    # return (1-s)*(1-s)*(1-s**(11./3.)) * 2.5e-5
     return (1-s_star(s))*(1-s_star(s))*(1-s_star(s)**(11./3.)) * 2.5e-5
 
-# def Pc(s,s0):
-#     return 5000 * s**(-0.3333)
-# def dPcds(s,s0):
-#     return 5000 * (-0.3333) * s**(-1.3333)
-
-# def eta_w(s):
-#     return  s**(11./3.) * 1e-4
-
-# def eta_o(s):
-#     return (1-s)*(1-s)*(1-s**(11./3.)) * 2.5e-5
 
 def f_w(s):
     return eta_w(s)/(eta_w(s)+eta_o(s))
@@ -125,7 +112,7 @@ class q_I_class(UserExpression):
             values[0] = 0.001
         else:
             values[0] = 0.0
-# q_I = q_I_class()
+
 qinj = q_I_class()
 q_I_BoM  = interpolate(qinj,kSpace)
 
@@ -136,7 +123,7 @@ class q_P_class(UserExpression):
             values[0] = 0.001
         else:
             values[0] = 0.0
-# q_P = q_P_class()
+
 qproj = q_P_class()
 q_P_BoM = interpolate(qproj,kSpace)
 #=================================;
@@ -145,16 +132,12 @@ q_P_BoM = interpolate(qproj,kSpace)
 def origin(x,on_boundary):
     return x[0] < DOLFIN_EPS and x[1] < DOLFIN_EPS 
 bc_pressure_at_point = DirichletBC(wSpace.sub(1), Constant(4500), origin, 'pointwise')
-# bc_pressure_at_point = DirichletBC(wSpace.sub(1), Constant(8500), origin)
-# bcs = [bc_pressure_at_point]
-# bcs = []
 
 #====================;
 #  March over time   ;
 #====================;
 file_s = File("./Output/sat_vertex_Picard_fs.pvd")
 file_p = File("./Output/pres_vertex_Picard_fs.pvd")
-# file_error = File("./Output/error_vertex_Picard.pvd")
 for n in range(num_steps):
     print ('time_step =%1.2f'% time)
     #update time
@@ -192,13 +175,8 @@ for n in range(num_steps):
                 q_P = 0.001
             else:
                 q_P = 0.
-            # print("coordinate ele %s : \n %s "%(elnum,element_p.tabulate_dof_coordinates(cell))  )
-            # C = assemble_local(inner(grad(p), grad(z))*dx(elnum),cell)[0:3,3:6]
-            # print("C = ", C)
             dofs_s = dofmap_s.cell_dofs(cell.index())
-            # print("dofs for s = \n",dofs_s)
             dofs_p = dofmap_p.cell_dofs(cell.index())
-            # print("dofs for p = \n",dofs_p)
             ##==========================;
             ## Assemble Global A matrix ;
             ## =========================;
@@ -213,7 +191,6 @@ for n in range(num_steps):
             #==========================;
             # Assemble Global B matrix ;
             # =========================;
-            # for myrow in range(len(dofs_s)): # myrow is 0, 1, 2
                 rowLoc_s = dofs_s[myrow]
                 cij_eta_ij_B = 0
                 rowLoc = dofs_p[myrow]
@@ -234,15 +211,9 @@ for n in range(num_steps):
                         print('out of range')
                     cij_eta_ij_B = cij_eta_ij_B + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_B[rowLoc_s,colLoc]= etaC_IJ_B[rowLoc_s,colLoc] - abs(C[myrow,mycol])* value_etaij
-
-                # etaC_IJ_B[rowLoc_s,rowLoc_s+M] = etaC_IJ_B[rowLoc_s,rowLoc_s+M] + cij_eta_ij_B
             #==========================;
             # Assemble Global C matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3, 4, 5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_C = 0
-                # for mycol in [x for x in range(len(dofs_s)) if x != myrow]:
                     colLoc = dofs_s[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc]
@@ -259,14 +230,9 @@ for n in range(num_steps):
                     cij_eta_ij_C = cij_eta_ij_C + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJPc[rowLoc,colLoc] = etaC_IJPc[rowLoc,colLoc] - abs(C[myrow,mycol]) \
                                              * value_etaij * dPcds(s0.vector()[colLoc],s0.vector()[colLoc])
-                # etaC_IJPc[rowLoc,rowLoc-M] = etaC_IJPc[rowLoc,rowLoc-M] + cij_eta_ij_C * dPcds(s0.vector()[rowLoc-M],s0.vector()[rowLoc-M])
             #==========================;
             # Assemble Global D matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 0, 1, 2
-                # rowLoc = dofs_p[myrow] # 
-                # cij_eta_ij_D = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_p[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc - M ] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -282,15 +248,9 @@ for n in range(num_steps):
                         print('out of range')
                     cij_eta_ij_D = cij_eta_ij_D + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_D[rowLoc,colLoc]= etaC_IJ_D[rowLoc,colLoc] - abs(C[myrow,mycol])* value_etaij
-
-                # etaC_IJ_D[rowLoc,rowLoc] = etaC_IJ_D[rowLoc,rowLoc] + cij_eta_ij_D
             #==========================;
             # Assemble Global F matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3,4,5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_F = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_s[mycol] # 0 , 1, 2
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -351,9 +311,6 @@ for n in range(num_steps):
         # LHSmat = Amat+Bmat+Cmat+Dmat
         LHSmat.assemble()
         LHS_aij = LHSmat.convert("aij") 
-        # We generated dense petsc matrices (as they are saving us tremendous time)
-        # after index operations and assembly, we convert the LHS matrix to aij (or sparse matrix) this way we are able to 
-        # solve problem with dolfin or petsc solver as they are desined for sparse matrices.:w
         lgmap = PETSc.LGMap().create(wSpace.dofmap().dofs())
         LHS_aij.setLGMap(lgmap, lgmap)
         # The above two lines help with establishing Dirichlet bcs, we then go ahead and bc_pressure_at_point.apply(LHS)
@@ -366,24 +323,7 @@ for n in range(num_steps):
         A_Bilinear = LHS
         A_Linear = RHS
 
-        # USING PETSC solver
-        #
-        # Option 1: setting to direct solver this is equal to conventional method
-        # Set petsc options
-        # PETScOptions.set("ksp_type", "cg")
-        # PETScOptions.set("ksp_rtol", 1e-4)
-        # PETSc.Options()['ksp_max_it'] = 1000000
-        # PETScOptions.set('pc_type', 'lu')
-        # PETScOptions.set('pc_factor_mat_solver_type', 'mumps')
-        #
-        #Option 2: setting to fieldsplit solver
-        # PETScOptions.set('ksp_view')
         PETScOptions.set('ksp_converged_reason')
-        # PETScOptions.set('ksp_monitor_true_residual')
-        # PETScOptions.set('ksp_monitor_draw')
-        # PETScOptions.set('ksp_monitor_singular_value')
-        # PETScOptions.set('ksp_gmres_krylov_monitor')
-        # PETScOptions.set('fieldsplit_ksp_monitor')
         PETScOptions.set("ksp_type", "fgmres")
         PETScOptions.set("ksp_rtol", 1e-8)
         PETScOptions.set('pc_type', 'fieldsplit')
@@ -401,11 +341,6 @@ for n in range(num_steps):
         solver.ksp().setFromOptions()
         solver.solve(u.vector(),A_Linear)
 
-        # CONVENTIONAL method
-        # solve(A_Bilinear,u.vector(),A_Linear)
-
-
-
         solver_time = tm.time()
         (sSol,pSol) = u.split(True)
 
@@ -415,25 +350,3 @@ for n in range(num_steps):
         s_k.assign(sSol)
         p_k.assign(pSol)
 
-    #=====================;
-    # Saving stiffness Mat
-    #=====================;
-    np.savetxt("./Mat/K_%d.dat"%time, LHS.array(),fmt='%3.3g',delimiter='\t')
-    [r,c] = np.where(LHS.array()!=0)
-    plt.scatter(c,-r,s=1,marker='*',c='r',label='Stiffness')
-    plt.xticks([])
-    plt.yticks([])
-    # plt.legend('stiffness')
-    # plt.title('Upwinding stiffness')
-    # plt.show()
-    plt.savefig('./Mat/K_%d.png'%time)
-    # Error = project(phi*(sSol-s0)/dt-div(eta_w(sSol)*grad(pSol))-(f_w(0.85) * q_I_BoM - f_w(s0)* q_P_BoM) ,ErrorSpace)
-    # Error.rename('Error','Error')
-
-    s0.assign(sSol)
-    p0.assign(pSol)
-    file_s << sSol,time
-    file_p << pSol,time
-    # file_error.write(Error, time)
-    # print('core \t Evec_time \t Fvec_time \t LHS_assembly_time \t solver_time ')
-    # print('%2.4f \t %2.4f \t  %2.4f \t  %2.4f \t  %2.4f  \n'%(core-start_time, Emat_time-core, Fmat_time-Emat_time,allLHS_time-Fmat_time,solver_time-allLHS_time))

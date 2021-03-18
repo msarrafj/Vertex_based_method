@@ -131,9 +131,6 @@ def f_o(s):
 #  Dirichlet boundary conditions  ;
 #=================================;
 S_L = Constant(0.85)
-# filesub = File('./Output/boundaries.pvd')
-# filesub << boundaries
-# bc_s = DirichletBC(wSpace.sub(0),S_L,left)
 def origin(x,on_boundary):
     return x[0] < DOLFIN_EPS and x[1] < DOLFIN_EPS 
 bc_pressure_at_point = DirichletBC(wSpace.sub(1), Constant(4500), origin, 'pointwise')
@@ -172,51 +169,6 @@ a_s = +(1./dt) * phi * s * v * dx +\
 
 L_s = +((1./dt) * phi * s0 + (f_w(0.85) * q_I - f_w(s0)* q_P) ) * v * dx
 
-# a_p = -(1./dt) * phi * s * z * dx +\
-#     eta_o(s0) * inner(grad(p)+grad(Pc(s)),grad(z)) * dx -\
-#     avg(inner(eta_o(s0) * grad(p), n)) * jump(z) * dS -\
-#     inner(eta_o(s0) * grad(p) , n ) * z * ds(1) -\
-#     inner(eta_o(s0) * grad(p) , n ) * z * ds(2) -\
-#     avg(inner(eta_o(s0) * grad(Pc(s)), n)) * jump(z) * dS -\
-#     inner(eta_o(s0) * grad(Pc(s)) , n ) * z * ds(1) +\
-#     avg(inner(eta_o(s0) * grad(z) , n )) * jump(p) * dS +\
-#     inner(eta_o(s0) * grad(z), n ) * p * ds(1) +\
-#     inner(eta_o(s0) * grad(z), n ) * p * ds(1) +\
-#     avg(inner(eta_o(s0) * grad(z) , n )) * jump(Pc(s))* dS +\
-#     inner(eta_o(s0) * grad(z), n ) * Pc(s) * ds(1) +\
-#     sigma/h_avg * jump(p) * jump(z)  * dS +\
-#     sigma/h * p * z * ds(1) +\
-#     sigma/h * p * z * ds(2) +\
-#     sigma/h_avg * jump(Pc(s)) * jump(z)  * dS +\
-#     sigma/h * Pc(s) * z * ds(1)
-
-# L_p = - ((1./dt) * phi * s0 - (f_o(0.85) * q_I - f_o(s0)* q_P) ) * z * dx +\
-#     inner(eta_o(s0) * grad(z) , n ) * P_L * ds(1) +\
-#     inner(eta_o(s0) * grad(z) , n ) * P_R * ds(2) +\
-#     sigma/h * P_L * z * ds(1) +\
-#     sigma/h * P_R * z * ds(2) +\
-#     inner(eta_o(s0) * grad(z), n) * Pc(S_L) * ds(1) +\
-#     sigma/h * Pc(S_L) * z * ds(1)
-
-# a_s = +(1./dt) * phi * s * v * dx +\
-#     eta_w(s0) * inner(grad(p) , grad(v)) * dx -\
-#     avg(inner( eta_w(s0) * grad(p) ,n)) * jump(v)  * dS -\
-#     inner(eta_w(s0) * grad(p) , n) * v * ds(1) -\
-#     inner(eta_w(s0) * grad(p) , n) * v * ds(2) +\
-#     avg(inner( eta_w(s0) * grad(v) ,n)) * jump(p) * dS +\
-#     inner(eta_w(s0) * grad(v) , n) * p * ds(1) +\
-#     inner(eta_w(s0) * grad(v) , n) * p * ds(2) +\
-#     sigma/h_avg * jump(p) * jump(v)  * dS +\
-#     sigma/h * p * v * ds(1) +\
-#     sigma/h * p * v * ds(2)
-
-# L_s = +((1./dt) * phi * s0 + (f_w(0.85) * q_I - f_w(s0)* q_P) ) * v * dx + \
-#     eta_w(s0) * inner(grad(v),n) * P_L * ds(1) +\
-#     eta_w(s0) * inner(grad(v),n) * P_R * ds(2) +\
-#     sigma/h * P_L * v * ds(1) +\
-#     sigma/h * P_R * v * ds(2)
-
-# F =  a_s - L_s + a_p - L_p
 Bilinear = a_s + a_p
 Linear = L_s + L_p
 # ====================;
@@ -246,12 +198,6 @@ for n in range(num_steps):
         [bc.apply(A_Bilinear,A_Linear) for bc in bcs]
 
         # Set petsc options
-        # PETScOptions.set("ksp_type", "cg")
-        # # PETScOptions.set("ksp_rtol", 1e-4)
-        # # PETSc.Options()['ksp_max_it'] = 1000000
-        # PETScOptions.set('pc_type', 'lu')
-        # PETScOptions.set('pc_factor_mat_solver_type', 'mumps')
-        #
         PETScOptions.set('ksp_view')
         PETScOptions.set('ksp_monitor_true_residual')
         PETScOptions.set('pc_type', 'fieldsplit')
@@ -266,20 +212,13 @@ for n in range(num_steps):
         solver.ksp().setFromOptions()
         solver.solve(u.vector(),A_Linear)
 
-        #solve
-        # solve(A_Bilinear,u.vector(),A_Linear)
-
-
 
         (sSol,pSol) = u.split(True)
 
         diff = sSol.vector().get_local()-s_k.vector().get_local()
         eps = np.linalg.norm(diff, ord=np.inf)
-        # print('iter=%d: norm=%g'%(itr,eps))
         s_k.assign(sSol)
         p_k.assign(pSol)
-        # u_k.assign(u)
-        # (s_k,p_k) = u_k.split(True)
 
 
     Error = project(phi*(sSol-s0)/dt-div(eta_w(sSol)*grad(pSol))-(f_w(0.85) * q_I - f_w(s0)* q_P) ,ErrorSpace)
@@ -289,16 +228,10 @@ for n in range(num_steps):
     # Saving stiffness Mat
     #=====================;
     np.savetxt("./Mat/KDG_%d.dat"%time, A_Bilinear.array(),fmt='%3.3g',delimiter='\t')
-    # # np.savetxt("FD_b.dat", b.vector(),fmt='%3.3g',delimiter='\t')
-    # print(LHS.array())
     [r,c] = np.where(A_Bilinear.array()!=0)
-    # print(r,c)
     plt.scatter(c,-r,s=1,marker='*',c='r',label='Stiffness')
     plt.xticks([])
     plt.yticks([])
-    # plt.legend('stiffness')
-    # plt.title('Upwinding stiffness')
-    # plt.show()
     plt.savefig('./Mat/KDG_%d.png'%time)
     s0.assign(sSol)
     p0.assign(pSol)
@@ -306,4 +239,3 @@ for n in range(num_steps):
     file_s << sSol,time
     file_p << pSol,time
     file_error.write(Error, time)
-# print("(AT time %6.2f)  %6.2e < ERROR <  %6.2e" %(time,Error.vector().min(),Error.vector().max() ))

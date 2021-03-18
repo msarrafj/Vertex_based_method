@@ -15,9 +15,7 @@ dt = T / num_steps # time step size
 # =====================================;
 #  Create mesh and identify boundary  ;
 #=====================================;
-# nx = 40
 mesh= Mesh('mesh.xml')
-# mesh = RectangleMesh(Point(0,0), Point(100,100), nx, nx)
 boundaries = MeshFunction("size_t",mesh, mesh.topology().dim()-1)
 #==========================;
 #  Define function spaces ;
@@ -46,7 +44,6 @@ area = [cell.volume() for cell in cells(mesh)]
 #===================================;
 #  Define trial and test functions  ;
 #===================================;
-# (s,p) = (u[0],u[1]) # for non-linear solvers
 (s,p) = TrialFunction(wSpace) # for linear solvers
 (z,v) = TestFunction(wSpace)
 
@@ -72,10 +69,9 @@ R = 0.05
 P_d = 5000.
 theta = 3.
 def s_star(s):
-    # return (s-s_rw)/(1-s_rw-s_ro)  #the numirator s_rw=0.15 gave numerical error 
     return s
+
 def Ds_star_ds(s):
-    # return 1./(1-s_rw-s_ro)
     return 1.
 
 def Pc(s,s0):
@@ -94,23 +90,10 @@ def Pc_none(s,s0):
 
 
 def eta_w(s):
-    # return  s**(11./3.) * 1e-4
     return  s_star(s)**(11./3.) * 1e-4
 
 def eta_o(s):
-    # return (1-s)*(1-s)*(1-s**(11./3.)) * 2.5e-5
     return (1-s_star(s))*(1-s_star(s))*(1-s_star(s)**(11./3.)) * 2.5e-5
-
-# def Pc(s,s0):
-#     return 5000 * s**(-0.3333)
-# def dPcds(s,s0):
-#     return 5000 * (-0.3333) * s**(-1.3333)
-
-# def eta_w(s):
-#     return  s**(11./3.) * 1e-4
-
-# def eta_o(s):
-#     return (1-s)*(1-s)*(1-s**(11./3.)) * 2.5e-5
 
 def f_w(s):
     return eta_w(s)/(eta_w(s)+eta_o(s))
@@ -124,9 +107,6 @@ def f_o(s):
 def origin(x,on_boundary):
     return x[0] < DOLFIN_EPS and x[1] < DOLFIN_EPS and x[2] < DOLFIN_EPS
 bc_pressure_at_point = DirichletBC(wSpace.sub(1), Constant(4500), origin, 'pointwise')
-# bc_pressure_at_point = DirichletBC(wSpace.sub(1), Constant(8500), origin)
-# bcs = [bc_pressure_at_point]
-# bcs = []
 
 #====================;
 #  March over time   ;
@@ -159,10 +139,6 @@ for n in range(num_steps):
         elnum = 0
 
         start_time = tm.time()
-        # C = np.matrix([[0.01666667,-0.01666667,0.,0.],\
-        #            [-0.01666667,0.03333333,-0.01666667,0.],\
-        #            [ 0.,-0.01666667,0.03333333,-0.01666667],\
-        #            [0.,0.,-0.01666667,0.01666667]]) # only when dealing with squared mesh
         for cell in cells(mesh):
             C = assemble_local(inner(grad(p), grad(z))*dx(elnum),cell)[0:4,4:8] # Unstructure mesh
             #Define q_I and q_P
@@ -175,13 +151,8 @@ for n in range(num_steps):
                 q_P = 0.001
             else:
                 q_P = 0.
-            # print("coordinate ele %s : \n %s "%(elnum,element_p.tabulate_dof_coordinates(cell))  )
-            # C = assemble_local(inner(grad(p), grad(z))*dx(elnum),cell)[0:4,4:8]
-            # print("C = ", C)
             dofs_s = dofmap_s.cell_dofs(cell.index())
-            # print("dofs for s = \n",dofs_s)
             dofs_p = dofmap_p.cell_dofs(cell.index())
-            # print("dofs for p = \n",dofs_p)
             ##==========================;
             ## Assemble Global A matrix ;
             ## =========================;
@@ -218,14 +189,9 @@ for n in range(num_steps):
                     cij_eta_ij_B = cij_eta_ij_B + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_B[rowLoc_s,colLoc]= etaC_IJ_B[rowLoc_s,colLoc] - abs(C[myrow,mycol])* value_etaij
 
-                # etaC_IJ_B[rowLoc_s,rowLoc_s+M] = etaC_IJ_B[rowLoc_s,rowLoc_s+M] + cij_eta_ij_B
             #==========================;
             # Assemble Global C matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3, 4, 5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_C = 0
-                # for mycol in [x for x in range(len(dofs_s)) if x != myrow]:
                     colLoc = dofs_s[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc]
@@ -242,14 +208,9 @@ for n in range(num_steps):
                     cij_eta_ij_C = cij_eta_ij_C + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJPc[rowLoc,colLoc] = etaC_IJPc[rowLoc,colLoc] - abs(C[myrow,mycol]) \
                                              * value_etaij * dPcds(s0.vector()[colLoc],s0.vector()[colLoc])
-                # etaC_IJPc[rowLoc,rowLoc-M] = etaC_IJPc[rowLoc,rowLoc-M] + cij_eta_ij_C * dPcds(s0.vector()[rowLoc-M],s0.vector()[rowLoc-M])
             #==========================;
             # Assemble Global D matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 0, 1, 2
-                # rowLoc = dofs_p[myrow] # 
-                # cij_eta_ij_D = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_p[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc - M ] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -266,14 +227,9 @@ for n in range(num_steps):
                     cij_eta_ij_D = cij_eta_ij_D + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_D[rowLoc,colLoc]= etaC_IJ_D[rowLoc,colLoc] - abs(C[myrow,mycol])* value_etaij
 
-                # etaC_IJ_D[rowLoc,rowLoc] = etaC_IJ_D[rowLoc,rowLoc] + cij_eta_ij_D
             #==========================;
             # Assemble Global F matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3,4,5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_F = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_s[mycol] # 0 , 1, 2
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -305,40 +261,6 @@ for n in range(num_steps):
                 F_Term[rowLoc] = F_Term[rowLoc] + 1./4. * area[elnum]* (f_o(0.85) * q_I - f_o(s0.vector()[rowLoc-M])* q_P) #m_i*qI_i
             elnum += 1
         core = tm.time()
-        
-        # Amat = PETSc.Mat().create()
-        # Amat.setSizes(2*M,2*M)
-        # Amat.setType("dense")
-        # Amat.setUp()
-        # Amat.setValues(list(range(M-1)),list(range(M)),m_phi[0:M-1,0:M])
-        # # Amat.assemble()#
-
-        # Amat_time = tm.time()
-
-        # Bmat = PETSc.Mat().create()
-        # Bmat.setSizes(2*M,2*M)
-        # Bmat.setType("dense")
-        # Bmat.setUp()
-        # Bmat.setValues(list(range(M-1)),list(range(M,ncols)),etaC_IJ_B[0:M-1,M:(ncols+1)]) # not efficient we subt all the comps
-        # Bmat.setValues(np.array([M-1],dtype=np.intc),list(range(M,ncols)),np.diag(m_phi[0:M,0:M])) # BoM conserved
-        # # Bmat.assemble()#check if we need to add form_compiler_parameter in here?
-        # Bmat_time = tm.time()
-
-        # Cmat = PETSc.Mat().create()
-        # Cmat.setSizes(2*M,2*M)
-        # Cmat.setType("dense")
-        # Cmat.setUp()
-        # Cmat.setValues(list(range(M,nrows)),list(range(M)),etaC_IJPc[M:(nrows+1),0:M]-m_phi[0:M,0:M])
-        # # Cmat.assemble()#check if we need to add form_compiler_parameter in here?
-        # Cmat_time = tm.time()
-
-        # Dmat = PETSc.Mat().create()
-        # Dmat.setSizes(2*M,2*M)
-        # Dmat.setType("dense")
-        # Dmat.setUp()
-        # Dmat.setValues(list(range(M,nrows)),list(range(M,ncols)),etaC_IJ_D[M:(nrows+1),M:(ncols+1)]) # not efficient we subt all the comps
-        # # Dmat.assemble()
-        # Dmat_time = tm.time()
 
         Evec = PETSc.Vec().create()
         Evec.setSizes(2*M)
@@ -364,7 +286,6 @@ for n in range(num_steps):
         LHSmat.setValues(list(range(M,nrows)),list(range(M)),etaC_IJPc[M:(nrows+1),0:M]-m_phi[0:M,0:M]) # matrix C
         LHSmat.setValues(list(range(M,nrows)),list(range(M,ncols)),etaC_IJ_D[M:(nrows+1),M:(ncols+1)])  # matrix D
 
-        # LHSmat = Amat+Bmat+Cmat+Dmat
         LHSmat.assemble()
         LHS_aij = LHSmat.convert("aij") 
         # We generated dense petsc matrices (as they are saving us tremendous time)
@@ -376,36 +297,11 @@ for n in range(num_steps):
         LHS = PETScMatrix(LHS_aij)
         RHSvec = Evec+Fvec
         RHS = PETScVector(RHSvec)
-        # bc_pressure_at_point.apply(LHS)
 
         allLHS_time = tm.time()
 
         A_Bilinear = LHS
         A_Linear = RHS
-        # [bc.apply(A_Bilinear,A_Linear) for bc in bcs]
-        # Set petsc options
-        # PETScOptions.set("ksp_type", "fgmres")
-        # PETScOptions.set("ksp_rtol", 1e-4)
-        # PETSc.Options()['ksp_max_it'] = 1000000
-        # PETScOptions.set('pc_type', 'fieldsplit')
-        # PETScOptions.set('pc_fieldsplit_type', 'schur')
-        # PETScOptions.set('pc_fieldsplit_0_fields', '0')
-        # PETScOptions.set('pc_fieldsplit_1_fields', '1')
-        # PETScOptions.set('pc_fieldsplit_detect_saddle_point')
-        # PETScOptions.set('pc_fieldsplit_shur_face_type', 'upper')
-        # PETScOptions.set('fieldsplit_0_ksp_type', 'preonly')
-        # PETScOptions.set('fieldsplit_0_pc_type', 'sor')
-        # PETScOptions.set('fieldsplit_1_ksp_type', 'gmres')
-        # PETScOptions.set('fieldsplit_1_pc_type', 'hypre')
-        # PETScOptions.set('fieldsplit_1_pc_hypre_type', 'boomeramg')
-        # PETScOptions.set('pc_fieldsplit_schur_precondition','selfp')
-
-        # solver = PETScKrylovSolver()
-        # solver.set_operator(A_Bilinear)
-        # solver.ksp().setFromOptions()
-        # # # Solve the problem
-        # solver.solve(u.vector(),A_Linear)
-        # solver.solve(A_Bilinear,u.vector(),A_Linear)
         solve(A_Bilinear,u.vector(),A_Linear)
         solver_time = tm.time()
         (sSol,pSol) = u.split(True)
@@ -415,11 +311,7 @@ for n in range(num_steps):
         print('iter=%d: norm=%g'%(itr,eps))
         s_k.assign(sSol)
         p_k.assign(pSol)
-        # u_k.assign(u)
-        # (s_k,p_k) = u_k.split(True)
     s0.assign(sSol)
     p0.assign(pSol)
     file_s << sSol,time
     file_p << pSol,time
-    # print('core \t Evec_time \t Fvec_time \t LHS_assembly_time \t solver_time ')
-    # print('%2.4f \t %2.4f \t  %2.4f \t  %2.4f \t  %2.4f  \n'%(core-start_time, Emat_time-core, Fmat_time-Emat_time,allLHS_time-Fmat_time,solver_time-allLHS_time))

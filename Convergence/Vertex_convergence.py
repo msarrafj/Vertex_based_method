@@ -133,8 +133,6 @@ for n in range(num_steps):
     p_ex = interpolate(p_an,pSpace)
     p_ex.rename("p_ex","p_ex")
     s_ex.rename("s_ex","s_ex")
-    # file_sEx << s_ex,time
-    # file_pEx << p_ex,time
     # Picard parameters
     eps = 1.0
     tol = 1.0e-6
@@ -168,7 +166,6 @@ for n in range(num_steps):
         start_time = tm.time()
         C = np.matrix([[0.5,-0.5,0.0],[-0.5,1,-0.5],[0,-0.5,0.5]]) # only when dealing with structured mesh
         for cell in cells(mesh):
-            # C = assemble_local(inner(grad(p), grad(z))*dx(elnum),cell)[0:3,3:6]
             dofs_s = dofmap_s.cell_dofs(cell.index())
             dofs_p = dofmap_p.cell_dofs(cell.index())
             ##==========================;
@@ -177,11 +174,6 @@ for n in range(num_steps):
             for myrow in range(len(dofs_s)):
                 rowLoc = dofs_s[myrow]
                 m_phi[rowLoc,rowLoc] = m_phi[rowLoc,rowLoc] + 1./3. * area[elnum] * 0.2 / dt# for constant phi=0.2 only
-            #==========================;
-            # Assemble Global E vector ;
-            # =========================;
-                # E_Term[rowLoc] = E_Term[rowLoc] + 1./3. * area[elnum] * 0.2 * s0.vector()[rowLoc] / dt#  It is eqv to ((1./dt) * phi * s0 ) * z * dx 
-                # E_Term[rowLoc] = E_Term[rowLoc] + 1./3. * area[elnum]*  q_w(s0.vector()[rowLoc]) #m_i*qI_i
             #==========================;
             # Assemble Global B matrix ;
             # =========================;
@@ -206,15 +198,9 @@ for n in range(num_steps):
                         print('out of range')
                     cij_eta_ij_B = cij_eta_ij_B + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_B[rowLoc_s,colLoc]= etaC_IJ_B[rowLoc_s,colLoc] - abs(C[myrow,mycol])* value_etaij
-
-                # etaC_IJ_B[rowLoc_s,rowLoc_s+M] = etaC_IJ_B[rowLoc_s,rowLoc_s+M] + cij_eta_ij_B
             #==========================;
             # Assemble Global C matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3, 4, 5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_C = 0
-                # for mycol in [x for x in range(len(dofs_s)) if x != myrow]:
                     colLoc = dofs_s[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc]
@@ -231,14 +217,9 @@ for n in range(num_steps):
                     cij_eta_ij_C = cij_eta_ij_C + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJPc[rowLoc,colLoc] = etaC_IJPc[rowLoc,colLoc] - abs(C[myrow,mycol]) \
                                              * value_etaij * dPcds(s0.vector()[colLoc],s0.vector()[colLoc])
-                # etaC_IJPc[rowLoc,rowLoc-M] = etaC_IJPc[rowLoc,rowLoc-M] + cij_eta_ij_C * dPcds(s0.vector()[rowLoc-M],s0.vector()[rowLoc-M])
             #==========================;
             # Assemble Global D matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 0, 1, 2
-                # rowLoc = dofs_p[myrow] # 
-                # cij_eta_ij_D = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_p[mycol]
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc - M ] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -254,15 +235,9 @@ for n in range(num_steps):
                         print('out of range')
                     cij_eta_ij_D = cij_eta_ij_D + abs(C[myrow,mycol]) * value_etaij
                     etaC_IJ_D[rowLoc,colLoc]= etaC_IJ_D[rowLoc,colLoc] - abs(C[myrow,mycol])* value_etaij
-
-                # etaC_IJ_D[rowLoc,rowLoc] = etaC_IJ_D[rowLoc,rowLoc] + cij_eta_ij_D
             #==========================;
             # Assemble Global F matrix ;
             # =========================;
-            # for myrow in range(len(dofs_p)): # myrow is 3,4,5
-                # rowLoc = dofs_p[myrow]
-                # cij_eta_ij_F = 0
-                # for mycol in [x for x in range(len(dofs_p)) if x != myrow]:
                     colLoc = dofs_s[mycol] # 0 , 1, 2
                     s_i = s_k.vector()[rowLoc - M]
                     s_j = s_k.vector()[colLoc] # [<>] should be global dof of s in matrix B (not Big matrix) 
@@ -290,15 +265,12 @@ for n in range(num_steps):
                 etaC_IJ_D[rowLoc,rowLoc] = etaC_IJ_D[rowLoc,rowLoc] + cij_eta_ij_D
                 F_Term[rowLoc] = F_Term[rowLoc] + cij_eta_ij_F * ( dPcds(s0.vector()[rowLoc-M],s0.vector()[rowLoc-M]) \
                                         * s0.vector()[rowLoc-M] - Pc(s0.vector()[rowLoc-M],s0.vector()[rowLoc-M]))
-                # F_Term[rowLoc] = F_Term[rowLoc] - 1./3. * area[elnum] * 0.2 * s0.vector()[rowLoc-M] / dt#  It is eqv to -((1./dt) * phi * s0 ) * v * dx 
-                # F_Term[rowLoc] = F_Term[rowLoc] + 1./3. * area[elnum]* q_o(s0.vector()[rowLoc-M]) #m_i*qI_i
             elnum += 1
         core = tm.time()
 
         Evec.setValues(list(range(M-1,M)),0)
         Evec.assemble()
         E = PETScVector(Evec)
-        # np.savetxt("E_old.dat", E[:], fmt='%3.3g', delimiter= '\t' )
         Emat_time = tm.time()
 
         Fvec.setValues(list(range(M,nrows)),F_Term[M:(nrows+1)]) # not efficient we subt all the comps
@@ -306,13 +278,6 @@ for n in range(num_steps):
         F_mass = assemble(- ((1./dt) * phi * s0) * v * dx + (q_o)  * v * dx , form_compiler_parameters={\
             'quadrature_degree': 1,'quadrature_rule': 'vertex','representation': 'quadrature'}) # mass lumped
         F = PETScVector(Fvec) + F_mass
-        # np.savetxt("F_old.dat", F[:], fmt='%3.3g', delimiter= '\t' )
-        # Fvec = PETSc.Vec().create()
-        # Fvec.setSizes(2*M)
-        # Fvec.setUp()
-        # Fvec.setValues(list(range(M,nrows)),F_Term[M:(nrows+1)]) 
-        # # Fvec.assemble()
-        # np.savetxt("F_new.dat", Fvec[:], fmt='%3.3g', delimiter= '\t' )
         Fmat_time = tm.time()
 
         LHSmat = PETSc.Mat().create()
@@ -328,15 +293,9 @@ for n in range(num_steps):
         # LHSmat = Amat+Bmat+Cmat+Dmat
         LHSmat.assemble()
         LHS_aij = LHSmat.convert("aij") 
-        # We generated dense petsc matrices (as they are saving us tremendous time)
-        # after index operations and assembly, we convert the LHS matrix to aij (or sparse matrix) this way we are able to 
-        # solve problem with dolfin or petsc solver as they are desined for sparse matrices.
         lgmap = PETSc.LGMap().create(wSpace.dofmap().dofs())
         LHS_aij.setLGMap(lgmap, lgmap)
-        # The above two lines help with establishing Dirichlet bcs, we then go ahead and bc_pressure_at_point.apply(LHS)
         LHS = PETScMatrix(LHS_aij)
-        # RHSvec = Evec+Fvec
-        # RHS = PETScVector(RHSvec)
         RHS = F+E # old RHS
 
         allLHS_time = tm.time()
@@ -345,7 +304,6 @@ for n in range(num_steps):
         A_Linear = RHS
         bc_s.apply(A_Bilinear,A_Linear)
         bc_p.apply(A_Bilinear,A_Linear)
-        # [bc.apply(A_Bilinear,A_Linear) for bc in bcs]
 
         solve(A_Bilinear,u.vector(),A_Linear)
         solver_time = tm.time()
@@ -360,11 +318,6 @@ for n in range(num_steps):
 
     s0.assign(sSol)
     p0.assign(pSol)
-
-    # file_s << sSol,time
-    # file_p << pSol,time
-    # print('core \t Evec_time \t Fvec_time \t LHS_assembly_time \t solver_time ')
-    # print('%2.4f \t %2.4f \t  %2.4f \t  %2.4f \t  %2.4f  \n'%(core-start_time, Emat_time-core, Fmat_time-Emat_time,allLHS_time-Fmat_time,solver_time-allLHS_time))
 #=================;
 #Exact solution   ;
 #=================;
