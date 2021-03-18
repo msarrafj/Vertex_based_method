@@ -1,7 +1,7 @@
 #  Python codes for ***vertex upwinding scheme*** implemented in FEniCS and PETSc
 Numerical examples for
 > Mohammad. S. Joshaghani and Beatrice Riviere,
-> ``A computational framework for a vertex unwinding scheme in two-phase flow"
+> ``A computational framework for a vertex unwinding scheme in two-phase flow" Available in [arXiv](https://arxiv.org/abs/2103.03285).
 
 In this repoository, we have provided python computer codes for the numerical solution of immiscible two-phase flows in porous media, which is obtained by a first order finite element method equipped with mass-lumping and flux upwinding.
 This code entails several examples of quarter-five spot problems in two and three dimensions. We also illustrated how to handle heterogeneities in the permeability field. More details are discussed in the paper.
