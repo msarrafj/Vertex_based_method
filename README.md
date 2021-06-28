@@ -1,4 +1,4 @@
-#  Python codes for ***vertex upwinding scheme*** implemented in FEniCS and PETSc
+#  Codes for ***vertex upwinding scheme*** implemented in FEniCS and PETSc
 Numerical examples for
 > Mohammad. S. Joshaghani and Beatrice Riviere,
 > ``A computational framework for a vertex unwinding scheme in two-phase flow" Available in [arXiv](https://arxiv.org/abs/2103.03285).
