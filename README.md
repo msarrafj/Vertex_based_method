@@ -31,7 +31,7 @@ This video shows the evolution of the saturation solution in highly heterogeneou
 ![](./Video/Video3.gif)
 <p align="center">
 
-This video shows contours of the saturation solutions obtained under the proposed vertex scheme on a highly heterogeneous domain (i.e., section of SPE10 benchmark paroblem). We can observe that the proposed vertex scheme generates robust and accurate outputs. The wetting phase fluid flows through the most permeable pore-networks from infection to production well (see [here](./Video/Figure2.pdf) for permeability field). In addition, the scheme respects the maximum principle, since no undershoots and overshoots has been observed during the simulation.  For more details on this problem, refer to section 5.2.7 of the paper.
+This video shows contours of the saturation solutions obtained under the proposed vertex scheme on a highly heterogeneous domain (i.e., section of SPE10 benchmark paroblem). We can observe that the proposed vertex scheme generates robust and accurate outputs. The wetting phase fluid flows through the most permeable pore-networks from infection to production well (see [here](./Video/Figure2.png) for permeability field). In addition, the scheme respects the maximum principle, since no undershoots and overshoots has been observed during the simulation.  For more details on this problem, refer to section 5.2.7 of the paper.
 </p>
 
 ## Project tree
