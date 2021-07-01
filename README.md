@@ -1,4 +1,4 @@
-<center> <h1>Codes for vertex upwinding scheme implemented in FEniCS and PETSc</h1> </center>
+<center><h1>Codes for vertex upwinding scheme implemented in FEniCS and PETSc</h1></center>
 
 Numerical examples for
 > Mohammad. S. Joshaghani and Beatrice Riviere,
@@ -21,14 +21,17 @@ This video shows the evolution of saturation solutions in a two-dimension porous
 <p align="center">
 <img src="Video/Video2.gif" width="600" />
 </p>
-<p align="center">
-This video shows the evolution of the saturation solution in highly heterogeneous porous medium (layer 45 of SPE10 problem). The corresponding permeability filed is shown in Figure 10.b of the. It is evident that permeability field dictates the pattern fluid flows through porous medium. Furthermore, the video reiterates that the proposed vertex scheme always produce physical values (between 0.15 and 0.85 in this problem), without any undershoots and overshoots, even for domains with permeabilities that vary over many orders of magnitude. For more details on this simulation, refer to section 5.2.5 of the paper. 
+
+<p align="center"> 
+
+This video shows the evolution of the saturation solution in highly heterogeneous porous medium (layer 45 of SPE10 problem). The corresponding permeability field can be found [here](./Video/Figure1.png). It is evident that permeability field dictates the pattern fluid flows through porous medium. Furthermore, the video reiterates that the proposed vertex scheme always produce physical values (between 0.15 and 0.85 in this problem), without any undershoots and overshoots, even for domains with permeabilities that vary over many orders of magnitude. For more details on this simulation, refer to section 5.2.5 of the paper. 
 </p>
 
 
 ![](./Video/Video3.gif)
 <p align="center">
-This video shows contours of the saturation solutions obtained under the proposed vertex scheme on a highly heterogeneous domain (i.e., section of SPE10 benchmark paroblem). We can observe that the proposed vertex scheme generates robust and accurate outputs. The wetting phase fluid flows through the most permeable pore-networks from infection to production well (see Figure 16 in the paper for permeability field). In addition, the scheme respects the maximum principle, since no undershoots and overshoots has been observed during the simulation.  For more details on this problem, refer to section 5.2.7 of the paper.
+
+This video shows contours of the saturation solutions obtained under the proposed vertex scheme on a highly heterogeneous domain (i.e., section of SPE10 benchmark paroblem). We can observe that the proposed vertex scheme generates robust and accurate outputs. The wetting phase fluid flows through the most permeable pore-networks from infection to production well (see [here](./Video/Figure2.pdf) for permeability field). In addition, the scheme respects the maximum principle, since no undershoots and overshoots has been observed during the simulation.  For more details on this problem, refer to section 5.2.7 of the paper.
 </p>
 
 ## Project tree
